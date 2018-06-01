@@ -1,37 +1,48 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
+import Glyphicon from 'react-bootstrap/lib/Glyphicon';
+
 const style = {
   frame: {
-    width:          100,
-    height:         100,
+    width:          128,
+    height:         128,
     border:         '3px outset',
     display:        'flex',
     flexDirection:  'column',
     alignItems:     'center',
     justifyContent: 'center',
-    fontSize:       30,
+    fontSize:       40,
   },
   pressed: {
     border:   '3px inset',
     fontSize: 40,
   },
   on: {
-    backgroundColor: 'yellow',
-    color:           'black'
+    //    backgroundColor: 'yellow',
+    color: 'yellow'
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
+    flex:     .5
+  },
+  icon: {
+    fontSize: 16,
     flex:     .5
   },
   value: {
-    margin:  0,
-    padding: 0,
-    flex:    1
+    width:     '100%',
+    textAlign: 'center',
+    margin:    0,
+    padding:   0,
+    flex:      1
   },
 };
 
 export default class Toggle extends Component {
+  get icon() {
+    return this.props.icon ? <Glyphicon glyph={this.props.icon}/> : '';
+  }
   constructor(props) {
     super();
     this.title = props.title || '';
@@ -105,10 +116,9 @@ export default class Toggle extends Component {
      *      Object.assign(cstyle, state.on);
      *    }
      */
-    console.log(value, cstyle);
     return (
       <div 
-        style={cstyle}
+        style={{...cstyle, ...this.props.style}}
         onMouseDown={this.handleMouseDown}
         onMouseUp={this.handleMouseUp}
         onTouchStart ={this.handleMouseDown}
@@ -117,7 +127,9 @@ export default class Toggle extends Component {
       >
         <div style={style.title}>{this.title}</div>
         {value ? 'ON' : 'OFF'}
-        <div style={style.title} />
+        <div style={style.icon}>
+          {this.icon}
+        </div>
       </div>
     );
   }
@@ -171,6 +183,8 @@ export default class Toggle extends Component {
 
 }
 Toggle.propTypes = {
+  style: PropTypes.string,    // defaults to null
   title: PropTypes.string,    // defaults to ''
+  icon:  PropTypes.string,    // defaults to ''
   value: PropTypes.bool,      // defaults to false
 };

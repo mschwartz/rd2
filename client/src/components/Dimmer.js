@@ -1,41 +1,7 @@
-import React, {Component} from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
-const style = {
-  frame: {
-    width:          100,
-    height:         100,
-    border:         '3px outset',
-    display:        'flex',
-    flexDirection:  'column',
-    alignItems:     'center',
-    justifyContent: 'center',
-    fontSize:       30,
-  },
-  pressed: {
-    border:   '3px inset',
-    fontSize: 40,
-  },
-  on: {
-    backgroundColor: 'yellow',
-    color:           'black'
-  },
-  title: {
-    fontSize: 14,
-    flex:     .5
-  },
-  value: {
-    margin:  0,
-    padding: 0,
-    flex:    1
-  },
-  chevron: {
-    margin:    0,
-    padding:   0,
-    textAlign: 'center',
-    fontSize:  10,
-  },
-};
+import Tile from './Tile';
 
 /**
  * Dimmer Component
@@ -74,115 +40,17 @@ const style = {
  * If you need contextmenu functionality, you may want to enhance the event
  * handler for the contextmenu event beyond simply calling preventDefault().
  */
-export default class Dimmer extends Component {
+export default class Dimmer extends Tile {
   constructor(props) {
-    super();
-    this.title = props.title || '';
+    super(props);
     this.increment = props.increment || 1;
     this.decrement = props.decrement || -1;
     this.minValue = props.minValue || 0;
     this.maxValue = props.maxValue || 100;
-    this.initialDelay = props.initialDelay || 1000;
-    this.initialRepeat = props.initialRepeat || 250;
-    this.acceleration = props.acceleration || 4;
-    this.accelerationAmount = props.accelerationAmount || 10;
-    this.minRepeat = props.minRepeat || 50;
+    this.val = props.value || 0;
 
-    this.state = {
-      pressed: false,
-      value:   props.value || 0,
-      on:      props.on || false
-    };
-
-    // handles for setTimeout and setInterval
-    this.timeout = null;
-    this.interval = null;
-
-    // Mouse Event Handling
-    this.mouseDown = false;
-    this.eventHandlerInstalled = false;
-    this.handleMouseDown = this.handleMouseDown.bind(this);
-    this.handleMouseUp = this.handleMouseUp.bind(this);
-
-    // Touch Event Handling
-    this.touchDown = false;
-    this.handleTouchStart = this.handleTouchStart.bind(this);
-    this.handleTouchEnd = this.handleTouchEnd.bind(this);
-
-    // Handlers for repeat while holding press
-    this.handleStartRepeat = this.handleStartRepeat.bind(this);
-    this.handleRepeat = this.handleRepeat.bind(this);
-  }
-
-  /**
-   * cleanup()
-   *
-   * Remove any event handlers and clear any timers that have been set.
-   *
-   * @private
-   */
-  cleanup() {
-    this.eventListenerHandler(false);
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
-    if (this.interval) {
-      clearTimeout(this.interval);
-      this.interval = null;
-    }
-  }
-
-  /**
-   * componentWillUnMount()
-   *
-   * Assure everything is cleaned up.
-   */
-  componentWillUnmount() {
-    this.cleanup();
-  }
-
-  /**
-   * render()
-   *
-   * Render the component.
-   */
-  render() {
-    const state = this.state,
-          value = state.value,
-          on = state.on,
-          cstyle = Object.assign({}, style.frame, (state.pressed ? style.pressed : {}), (on ? style.on : {}));
-
-    return (
-      <div 
-        style={cstyle}
-        onMouseDown={this.handleMouseDown}
-        onMouseUp={this.handleMouseUp}
-        onTouchStart ={this.handleTouchStart}
-        onTouchEnd ={this.handleTouchEnd}
-        onTouchCancel ={this.handleTouchEnd}
-      >
-        <div 
-          style={style.title}
-        >
-          {this.title}
-        </div>
-        <div 
-          style={style.value}
-          onMouseDown={(e) => {
-            this.setState({ on: !this.state.on });
-            e.stopPropagation();
-          }}
-          onTouchStart={(e) => {
-            this.setState({ on: !this.state.on });
-            e.stopPropagation();
-          }}
-        >
-          {value}
-        </div>
-        <div style={style.title} />
-      </div>
-    );
+    this.onUp = this.handleUp.bind(this);
+    this.onDown = this.handleDown.bind(this);
   }
 
   /**
@@ -196,122 +64,28 @@ export default class Dimmer extends Component {
    *
    * @private
    */
-  changeValue() {
+  changeValue(delta) {
     const value = this.state.value,
-          val = value + this.dir;
+          val = value + delta;
+
+    console.log('changeValue', val);
     if (val > this.maxValue || val < this.minValue) {
       return value;
     }
     return val;
   }
 
-  /**
-   * eventListenerHandler(add);
-   *
-   * Add (if add is true) or remove (otherwise) handleMouseUp handler for
-   * mouseup event.
-   *
-   * Event handler will not be removed if it wasn't already installed.
-   *
-   * @private
-   */
-  eventListenerHandler(add) {
-    if (add) {
-      document.addEventListener('mouseup', this.handleMouseUp, false);
-      this.eventHandlerInstalled = true;
-    }
-    else if (this.eventHandlerInstalled) {
-      document.removeEventListener('mouseup', this.handleMouseUp, false);
-      this.eventHandlerInstalled = false;
-    }
+  handleUp() {
+    this.setState({ value: this.changeValue(1)});
   }
-
-  /**
-   * handleMouseDown()
-   *
-   * Event handler for mousedown event.
-   */
-  handleMouseDown(e) {
-    this.dir = e.nativeEvent.offsetY < 50 ? this.increment : this.decrement;
-    this.mouseDown = true;
-    this.eventListenerHandler(true);
-    this.timeout = setTimeout(this.handleStartRepeat, this.initialDelay);
-    this.setState({ pressed: true, value: this.changeValue() });
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  /**
-   * handleMouseUp()
-   *
-   * Event handler for mouseup event.
-   */
-  handleMouseUp(e) {
-    this.mouseDown = false;
-    this.cleanup();
-    this.setState({ pressed: false });
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  /**
-   * handleTouchStart()
-   *
-   * Event handler for touchstart event.
-   */
-  handleTouchStart(e) {
-    const n = e.touches[0],
-          y = n.clientY - n.target.offsetTop;
-
-    this.dir = y < 50 ? this.increment : this.decrement;
-
-    this.touchDown = true;
-    this.timer = setTimeout(this.handleStartRepeat, this.initialDelay);
-    this.setState({ pressed: true, value: this.changeValue() });
-    e.preventDefault && e.preventDefault();
-    e.stopPropagation && e.stopPropagation();
-  }
-
-  handleTouchEnd(e) {
-    this.cleanup();
-    this.setState({ pressed: false });
-    this.touchDown = false;
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
-
-  handleStartRepeat() {
-    if (!this.mouseDown && !this.touchDown) {
-      this.cleanup();
-      return;
-    }
-    this.acclerationCount = this.acceleration;
-    this.repeatTime = this.initialRepeat;
-    this.interval = setTimeout(this.handleRepeat, this.initialRepeat);
-    this.setState({ value: this.changeValue() });
-  }
-  
-  handleRepeat() {
-    if (!this.mouseDown && !this.touchDown) {
-      this.cleanup();
-      return;
-    }
-    this.setState({ value: this.changeValue() });
-    if (--this.accelerationCount) {
-      return;
-    }
-    this.accelrationCount = this.acceleration;
-    this.repeatTime -= this.accelerationAmount;
-    if (this.repeatTime < this.minRepeat) {
-      this.repeatTime = this.minRepeat;
-    }
-    this.interval = setTimeout(this.handleRepeat, this.repeatTime);
+  handleDown() {
+    this.setState({ value: this.changeValue(-1)});
   }
 }
 
 Dimmer.propTypes = {
   title:              PropTypes.string,   // defaults to ''
+  icon:               PropTypes.string,   // defaults to ''
   on:                 PropTypes.bool,     // defaults to false
   value:              PropTypes.number,   // defaults to 0
   minValue:           PropTypes.number,   // defaults to 0
